@@ -19,7 +19,7 @@ E-mail : frozenmad2015@outlook.com
 * *numpy*
 * *PIL*
 ## 使用简易教程
-###### Step 0
+### Step 0 环境准备
 最开始当然是一些引用项：
 ```
 from PIL import image
