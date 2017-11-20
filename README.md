@@ -96,6 +96,6 @@ im.save('example.png')
 ## 相关说明
 由于程序采用python写成，仅提供光线追踪算法思想的学习，并没有使用GPU，所以导致渲染速度较慢。
 
-示例程序的环境中一共有两个球，两个三角面片，一个光源，分辨率为<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" style="border:none;">，经计算渲染所需时间为50s左右。
+示例程序的环境中一共有两个球，两个三角面片，一个光源，分辨率为200\*200，经计算渲染所需时间为50s左右。
 
 **再次声明，转载与引用请注明出处~**
