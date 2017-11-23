@@ -5,6 +5,8 @@ _2017 fall SJTU CG course assignment2_
 
 E-mail : frozenmad2015@outlook.com
 
+License : [MIT License](LICENSE)
+
 > 注：引用或转载请注明出处
 
 ## 相关文件
