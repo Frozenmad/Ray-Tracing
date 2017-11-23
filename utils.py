@@ -14,7 +14,7 @@ def Matrix2Image(data):
 	data = (data * 255)
 	h = data.shape[0]
 	w = data.shape[1]
-	im = Image.new("RGB",(h,w))
+	im = Image.new("RGB",(w,h))
 	for i in range(h):
 		for j in range(w):
 			im.putpixel((j,i),(int(data[i][j][0]),int(data[i][j][1]),int(data[i][j][2])))
@@ -80,3 +80,17 @@ def different_side(v_1,v_2,v_3):
 	if np.inner(v_test_1,v_test_2) <= 0:
 		return True
 	return False
+
+def safe_arc_tan(x1,x2):
+	"""
+	calculate the arc_tan value of x1/x2
+	if x2 == 0, it will return pi/2 or -pi/2, depending on the sign of x1
+	"""
+	if check_value_zero(x1) and check_value_zero(x2):
+		raise ValueError('Arc tan input 0 error')
+	size = np.sqrt(x1**2 + x2**2)
+	x1 = x1 / size
+	x2 = x2 / size
+	if check_value_zero(x2):
+		return x1 * np.pi/2
+	return np.arctan(x1/x2)
