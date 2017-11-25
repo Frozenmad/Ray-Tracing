@@ -16,6 +16,8 @@ License : [MIT License](LICENSE)
 空间、几何体、光源的实现代码
 ##### `utils.py`
 一些功能函数的封装
+##### `load_model.py`
+从obj文件中构建模型
 ## 环境依赖项
 * *python 2.7 or 3.x*
 * *numpy*
@@ -28,6 +30,8 @@ from PIL import image
 import numpy as np
 from Spacial import *
 from utils import *
+# 如果需要从.obj文件导入几何模型，那么还需要包含如下环境
+# from load_model.py import *
 ```
 通过重命名`np.array()`函数来得到更简洁的语法：
 ```
@@ -63,7 +67,8 @@ my_quad = Polynominal([arr([-10,10,-10]),arr([-10,10,10]),arr([-10,-10,10]),arr(
 ###### 组合几何体
 * 简单多边形  `Polynominal()`
 * 多边形 `Complete_Polynominal()`
-* 立方体 `Cube()` 
+* 立方体 `Cube()`
+* 从obj文件导入 `get_model(path)`  # 此项需要import load_model.py
 
 相关参数请参照`Spacial.py`的注释，原生几何体需要通过`my_space.AddObject()`添加入场景中，而组合几何体需要通过`my_space.AddObjects()`来添加。
 
