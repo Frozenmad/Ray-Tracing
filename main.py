@@ -20,7 +20,7 @@ im = Matrix2Image(test)
 
 im.show()
 """
-
+"""
 arr = np.array
 
 my_space = Spacial()
@@ -46,7 +46,7 @@ im.show()
 path_to_save = 'my_space_final.png'
 
 im.save(path_to_save)
-
+"""
 """
 my_circle = Circle(np.array([0,0,0]),2,np.array([1.,1.,1.]),np.array([1.,0.,0.]),np.array([1.,0.,0.]))
 
@@ -83,30 +83,31 @@ im.save(path_to_save)
 
 #my_space.render_test(orth = True, y = 0, z = 9.5)
 """
-"""
-plane1 = Cube(arr([0,0,30]),10,80,10, ratio_a = 0.1, ratio_d = 0.4, ratio_s = 0.5)
+my_space = Spacial()
+
+plane1 = Cube(arr([0,0,30]),10,80,10)
 plane2 = Cube(arr([0,0,50]),10,60,10)
 cube1 = Cube(arr([0,-15,40]),10,10,10)
 cube2 = Cube(arr([0,15,40]),10,10,10)
 cube3 = Cube(arr([0,-20,12.5]),10,10,25)
 cube4 = Cube(arr([0,20,12.5]),10,10,25)
-surface = Plane(arr([0.,0.,-5.]),arr([0.,0.,1.]),texture_s = arr([1.,1.,1.]), texture_d = arr([1.,1.,1.]), texture_a = arr([1.,1.,1.]), ratio_s = 0.2, ratio_d = 0.8, ratio_a = 0.0)
+surface = Plane(arr([0.,0.,-5.]),arr([0.,0.,1.]),texture_s = arr([1.,1.,1.]), texture_d = arr([1.,1.,1.]), texture_a = arr([1.,1.,1.]), ratio_s = 0.2, ratio_d = 0.8, ratio_a = 0.0, specular = True, decay = 0.5)
 
-new_triangle = CompleteTriangle(arr([0.,-20.,-20.]),arr([0.,20.,-20.]),arr([0.,0.,20.]),arr([1.,-1.,0.]),arr([1.,1.,0.]),arr([1.,0.,1.]),
-	texture_s = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),texture_d = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),texture_a = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]))
+#new_triangle = CompleteTriangle(arr([0.,-20.,-20.]),arr([0.,20.,-20.]),arr([0.,0.,20.]),arr([1.,-1.,0.]),arr([1.,1.,0.]),arr([1.,0.,1.]),
+#	texture_s = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),texture_d = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),texture_a = arr([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]))
 
 ci = Circle(position = arr([0.,0.,5.]),radius = 5,texture_a = arr([1.,0.,0.]), texture_d = arr([1.,0.,0.]))
 
-my_camera = Camera(position = arr([50,0,0]))
+my_camera = Camera(position = arr([50,0,10]))
 
 Light = PointLight(arr([70,0,70]))
 
 Light_2 = Parallel_light(orientation = arr([-1,0,-1]))
 
 #my_space.AddObject(ci)
-"""
 
-"""
+
+
 my_space.AddObjects(plane1)
 my_space.AddObject(surface)
 my_space.AddObjects(plane2)
@@ -124,7 +125,7 @@ my_space.setCamera(my_camera)
 #my_space.render_test(orth = True, y = 0, z = 0)
 
 before = time.time()
-render = my_space.Render(orth = False, resolution_width = 200, resolution_height = 200, width = 100, height = 100, number = [1,1], max_iter = 2)
+render = my_space.Render(orth = False, resolution_width = 1920, resolution_height = 1080, width = 160, height = 90, number = [1,1], max_iter = 2)
 after = time.time()
 
 print("Total time used to render: {}".format(after-before))
@@ -133,7 +134,6 @@ im = Matrix2Image(render)
 
 im.show()
 
-path_to_save = 'my_space_6.png'
+path_to_save = 'my_space_spe.png'
 
 im.save(path_to_save)
-"""

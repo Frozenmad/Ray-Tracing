@@ -163,7 +163,6 @@ class Spacial():
 
 		return get_min(di_color * 1.  + am_color * 1. + sp_color * 1., np.array([1.,1.,1.]))
 
-
 class light(object):
 	"""
 	light class in space
@@ -268,8 +267,6 @@ class Parallel_light(light):
 			return np.array([0.,0.,0.])
 		return self.color * coss
 
-		
-
 class MyObject(object):
 	"""
 	MyObject class
@@ -279,7 +276,7 @@ class MyObject(object):
 	@ texture_d 		: np.array, size = 3, diffusion texture
 	@ texture_a 		: np.array, size = 3, ambitious texture
 	"""
-	def __init__(self,texture_s,texture_d,texture_a,ratio_s, ratio_d, ratio_a):
+	def __init__(self,texture_s,texture_d,texture_a,ratio_s, ratio_d, ratio_a, specular, decay):
 		super(MyObject,self).__init__()
 		self.ts = texture_s
 		self.td = texture_d
@@ -287,6 +284,8 @@ class MyObject(object):
 		self.rs = ratio_s
 		self.rd = ratio_d
 		self.ra = ratio_a
+		self.sp = specular
+		self.decay = decay
 
 	def setTexture_s(self,texture_s):
 		self.ts = texture_s
@@ -305,6 +304,9 @@ class MyObject(object):
 
 	def setRatio_a(self, ratio_a):
 		self.ra = ratio_a
+
+	def set_specular(self, specular):
+		self.sp = specular
 
 	def intersect(self,start,vec,number):
 		"""
@@ -327,7 +329,6 @@ class MyObject(object):
 		texture = arr([self.ts,self.td,self.ta])
 		return t,interpoint,ray_list,norm,Inter,texture
 
-
 class Circle(MyObject):
 	"""
 	Sphere object
@@ -335,8 +336,8 @@ class Circle(MyObject):
 	@ position 			: np.array, size = 3, center point of this shpere
 	@ r 				: double, the radius of sphere
 	"""
-	def __init__(self,position,radius,texture_s = arr([1.,1.,1.]),texture_d = arr([1.,1.,0.]),texture_a = arr([1.,1.,1.]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
-		MyObject.__init__(self,texture_s,texture_d,texture_a, ratio_s, ratio_d, ratio_a)
+	def __init__(self,position,radius,texture_s = arr([1.,1.,1.]),texture_d = arr([1.,1.,0.]),texture_a = arr([1.,1.,1.]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
+		MyObject.__init__(self,texture_s,texture_d,texture_a, ratio_s, ratio_d, ratio_a, specular, decay)
 		self.r = radius
 		self.position = position
 
@@ -365,27 +366,11 @@ class Circle(MyObject):
 		circle_point = start + vec * t
 		norm = self.get_norm(circle_point)
 		norm = normal(norm)
-		ray_list = get_ray_list(norm,number)
+		if not self.sp:
+			ray_list = get_ray_list(norm,number)
+		else:
+			ray_list = get_specular_ray_list(norm,vec,number, self.decay)
 		return t,circle_point,ray_list,norm,True,arr([self.ts,self.td,self.ta])
-		"""
-		circle_point_1 = start + vec * t1
-		circle_point_2 = start + vec * t2
-		if lenth(circle_point_2 - start) < mini or t2 < 0:
-			return 0,0,[],np.array([0,0,0]),False
-		if lenth(circle_point_1 - start) < mini or t1 < 0:
-			norm = self.get_norm(circle_point_2)
-			norm = normal(norm)
-			ray_list = get_ray_list(norm,1,1)
-			if t2 < 0.1:
-				print(t2)
-			return t2,circle_point_2,ray_list,norm,True
-		norm = self.get_norm(circle_point_1)
-		norm = normal(norm)
-		ray_list = get_ray_list(norm,1,1)
-		if(t1<0.1):
-			print(t1)
-		return t1,circle_point_1,ray_list,norm,True
-		"""
 
 	def get_norm(self,point):
 		"""
@@ -399,8 +384,8 @@ class Triangle(MyObject):
 	@ v1 v2 v3 		: Three vertices representing this triangle
 	@ norm 			: Plane norm
 	"""
-	def __init__(self,v1,v2,v3,texture_s = arr([1.,1.,1.]),texture_d = arr([1.,0.,1.]),texture_a = arr([1.,0.,1.]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
-		MyObject.__init__(self,texture_s,texture_d,texture_a, ratio_s, ratio_d, ratio_a)
+	def __init__(self,v1,v2,v3,texture_s = arr([1.,1.,1.]),texture_d = arr([1.,0.,1.]),texture_a = arr([1.,0.,1.]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
+		MyObject.__init__(self,texture_s,texture_d,texture_a, ratio_s, ratio_d, ratio_a, specular, decay)
 		self.v1 = v1
 		self.v2 = v2
 		self.v3 = v3
@@ -418,7 +403,10 @@ class Triangle(MyObject):
 				return 0,arr([0.,0.,0.]),[],arr([0.,0.,0.]),False,[]
 			point = start + t * vec
 			if self.ContainPoint(point):
-				ray_list = get_ray_list(self.norm,number)
+				if not self.sp:
+					ray_list = get_ray_list(self.norm,number)
+				else:
+					ray_list = get_specular_ray_list(self.norm,vec,number,self.decay)
 				return t,point,ray_list,self.norm,True,arr([self.ts,self.td,self.ta])
 			return 0,arr([0.,0.,0.]),[],arr([0.,0.,0.]),False,[]
 
@@ -446,14 +434,14 @@ class Triangle(MyObject):
 		return False
 
 class CompleteTriangle(MyObject):
-	def __init__(self, v1, v2, v3, norm1, norm2, norm3, texture_s = arr([[0.,1.,0.]]*3), texture_d = arr([[0.,1.,0.]]*3), texture_a = arr([[0.,1.,0.]]*3), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
+	def __init__(self, v1, v2, v3, norm1, norm2, norm3, texture_s = arr([[0.,1.,0.]]*3), texture_d = arr([[0.,1.,0.]]*3), texture_a = arr([[0.,1.,0.]]*3), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 		if texture_s.shape != (3,3):
 			raise ValueError("texture_s size is wrong! The input texture is: "+str(texture_s))
 		if texture_d.shape != (3,3):
 			raise ValueError("texture_d size is wrong! The input texture is: "+str(texture_d))
 		if texture_a.shape != (3,3):
 			raise ValueError("texture_a size is wrong! The input texture is: "+str(texture_a))
-		super(CompleteTriangle,self).__init__(texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a)
+		super(CompleteTriangle,self).__init__(texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a, specular, decay)
 		self.v1 = v1
 		self.v2 = v2
 		self.v3 = v3
@@ -485,7 +473,10 @@ class CompleteTriangle(MyObject):
 					texture = np.array([self.ts[2],self.td[2],self.ta[2]])
 				else:
 					pnorm, texture = self.get_norm_and_color(point)
-				ray_list = get_ray_list(pnorm,number)
+				if not self.sp:
+					ray_list = get_ray_list(pnorm,number)
+				else:
+					ray_list = get_specular_ray_list(pnorm,vec,number,self.decay)
 				return t,point,ray_list,pnorm,True,texture
 			return 0,arr([0.,0.,0.]),[],arr([0.,0.,0.]),False,[]
 
@@ -541,8 +532,8 @@ class CompleteTriangle(MyObject):
 
 
 class Plane(MyObject):
-	def __init__(self, point, norm, texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.,0.9]),texture_a = arr([0.5,0.,0.9]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
-		super(Plane,self).__init__(texture_s, texture_d, texture_a, ratio_s, ratio_d, ratio_a)
+	def __init__(self, point, norm, texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.,0.9]),texture_a = arr([0.5,0.,0.9]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
+		super(Plane,self).__init__(texture_s, texture_d, texture_a, ratio_s, ratio_d, ratio_a, specular, decay)
 		self.v = point
 		self.norm = normal(norm)
 
@@ -558,10 +549,13 @@ class Plane(MyObject):
 			if t < mini:
 				return 0,arr([0.,0.,0.]),[],arr([0.,0.,0.]),False,[]
 			point = start + t * vec
-			ray_list = get_ray_list(self.norm,number)
+			if not self.sp:
+				ray_list = get_ray_list(self.norm,number)
+			else:
+				ray_list = get_specular_ray_list(self.norm,vec,number,self.decay)
 			return t,point,ray_list,self.norm,True,arr([self.ts,self.td,self.ta])
 
-def Complete_Polynominal(v_list,norm_list,texture_s = arr([[1.,1.,1.]]*3),texture_d = arr([[0.4,0.3,0.9]]*3),texture_a = arr([[0.4,0.3,0.9]]*3),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
+def Complete_Polynominal(v_list,norm_list,texture_s = arr([[1.,1.,1.]]*3),texture_d = arr([[0.4,0.3,0.9]]*3),texture_a = arr([[0.4,0.3,0.9]]*3),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 	"""
 	Used to quickly construct a polynominal
 	@ v_list 		: the vertices of polynominal
@@ -576,10 +570,10 @@ def Complete_Polynominal(v_list,norm_list,texture_s = arr([[1.,1.,1.]]*3),textur
 		if i < 2:
 			continue
 		objectlist.append(CompleteTriangle(v_list[0],v_list[i-1],v_list[i],norm_list[0],norm_list[i-1],norm_list[i],texture_s = texture_s,
-			texture_d = texture_d, texture_a = texture_a,ratio_s = ratio_s,ratio_d = ratio_d,ratio_a = ratio_a))
+			texture_d = texture_d, texture_a = texture_a,ratio_s = ratio_s,ratio_d = ratio_d,ratio_a = ratio_a, specular = specular, decay = decay))
 	return objectlist
 
-def Polynominal(v_list,texture_s = arr([1.,1.,1.]),texture_d = arr([0.4,0.3,0.9]),texture_a = arr([0.4,0.3,0.9]),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
+def Polynominal(v_list,texture_s = arr([1.,1.,1.]),texture_d = arr([0.4,0.3,0.9]),texture_a = arr([0.4,0.3,0.9]),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 	"""
 	Used to quickly construct a polynominal
 	@ v_list 		: the vertices of polynominal
@@ -593,10 +587,10 @@ def Polynominal(v_list,texture_s = arr([1.,1.,1.]),texture_d = arr([0.4,0.3,0.9]
 	for i,_ in enumerate(v_list):
 		if i < 2:
 			continue
-		objectlist.append(Triangle(v_list[0],v_list[i-1],v_list[i],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a))
+		objectlist.append(Triangle(v_list[0],v_list[i-1],v_list[i],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a, specular = specular, decay = decay))
 	return objectlist
 
-def Cube(position, lenths, width, height, rotation = arr([0.,0.,0.]), texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.5,1.]), texture_a = arr([0.5,0.5,1.]),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1):
+def Cube(position, lenths, width, height, rotation = arr([0.,0.,0.]), texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.5,1.]), texture_a = arr([0.5,0.5,1.]),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 	mid_lenth = lenths/2
 	mid_width = width/2
 	mid_height = height/2
@@ -609,11 +603,9 @@ def Cube(position, lenths, width, height, rotation = arr([0.,0.,0.]), texture_s 
 	v7 = -v1
 	v8 = -v2
 	v1,v2,v3,v4,v5,v6,v7,v8 = Rotate(arr([v1,v2,v3,v4,v5,v6,v7,v8]),rotation) + position
-	objlist = np.append(Polynominal([v1,v4,v3,v2,v6,v5,v8,v4],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a),
-		Polynominal([v7,v6,v2,v3,v4,v8,v5,v6],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a))
+	objlist = np.append(Polynominal([v1,v4,v3,v2,v6,v5,v8,v4],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a, specular = specular, decay = decay),
+		Polynominal([v7,v6,v2,v3,v4,v8,v5,v6],texture_s,texture_d,texture_a,ratio_s,ratio_d,ratio_a, specular = specular, decay = decay))
 	return objlist
-
-
 
 def Rotate(vertex, rotation):
 	vec_x = arr([0,np.sin(rotation[0]),np.cos(rotation[0])])
@@ -623,6 +615,12 @@ def Rotate(vertex, rotation):
 	vertex = arr([[vec_y[2],0.,vec_y[1]],[0.,1.,0.],[-vec_y[0],0.,vec_y[2]]]).dot(vertex)
 	vertex = arr([[vec_z[0],vec_z[1],0.],[-vec_z[1],vec_z[0],0.],[0.,0.,1.]]).dot(vertex)
 	return vertex.T
+
+def get_specular_ray_list(norm, vec, number, decay):
+	ray_list = []
+	norm = - np.inner(norm, vec) * norm
+	ray_list.append([vec+2*norm, decay])
+	return ray_list
 
 
 def get_ray_list(norm, number):
