@@ -22,6 +22,7 @@ License : [MIT License](LICENSE)
 * *python 2.7 or 3.x*
 * *numpy*
 * *PIL*
+* *tqdm*
 ## 使用简易教程
 ### Step 0 环境准备
 最开始当然是一些引用项：
