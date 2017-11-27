@@ -94,3 +94,39 @@ def safe_arc_tan(x1,x2):
 	if check_value_zero(x2):
 		return x1 * np.pi/2
 	return np.arctan(x1/x2)
+
+def auto_camera(camera, maxs, mins, axis = 0, resolution_width = 100, resolution_height = 100, match_size = True):
+	"""
+	set the camera automatically
+	@ camera 			: the camera you want to set
+	@ maxs,mins			: the max and min measure of your model
+	@ resolution_width 	: the resolution width
+	@ resolution_height : the resolution height
+	@ match_size 		: whether to auto match the size, if True, the height will be auto craeted
+	"""
+	position = np.zeros(3)
+	for i in range(3):
+		if i == axis:
+			position[i] =  maxs[i] + maxs[i] * 0.3
+		else:
+			position[i] =  (maxs[i] + mins[i]) / 2
+	camera.setPosition(position)
+	camera.setPosDepth(maxs[axis] * 0.1)
+	if axis == 0:
+		camera.setheight((maxs[2] - mins[2]) * 1.2)
+		camera.setwidth((maxs[1] - mins[1]) * 1.2)
+		camera.setRotation([[0.,0.,np.pi]])
+	elif axis == 1:
+		camera.setheight((maxs[2] - mins[2]) * 1.2)
+		camera.setwidth((maxs[0] - mins[0]) * 1.2)
+		camera.setRotation([[0.,0.,-np.pi/2]])
+	else:
+		camera.setheight((maxs[0] - mins[0]) * 1.2)
+		camera.setwidth((maxs[1] - mins[1]) * 1.2)
+		camera.setRotation([[0.,np.pi/2,0.]])
+	if match_size:
+		resolution_height = int(resolution_width * camera.height / camera.width)
+	camera.setResolution_height(resolution_height)
+	camera.setResolution_width(resolution_width)
+	
+	return camera

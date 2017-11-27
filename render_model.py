@@ -4,50 +4,27 @@ from utils import *
 from Spacial import *
 import time
 from load_model import *
-
-
-
+import sys
 """
-test = np.zeros([100,100,3])
-
-for i in range(100):
-	for j in range(100):
-		test[i][j][0] = (j+100-i)/200
-		test[i][j][1] = (j+100-i)/200
-		test[i][j][2] = (j+100-i)/200
-
-im = Matrix2Image(test)
-
-im.show()
-"""
-
 arr = np.array
 
 my_space = Spacial()
-
-model_list,max_index,min_index = get_model('horse.obj',detail=True)
-
+model_list,max_index,min_index = get_model('test.obj',detail=True,specular = True)
 my_space.AddObjects(model_list)
-
 Light = Parallel_light(orientation = arr([-1.,0.,-1.]))
-
 my_space.AddLight(Light)
-
-camera = Camera()
-
-camera = auto_camera(camera,max_index,min_index,resolution_width = 20, resolution_height = 20, match_size = True, axis = 2)
-
+camera = Camera(position = arr([1000,500,0]),rotation = arr([[- np.pi / 2.,0.,np.pi]]), resolution_width = 20, resolution_height = 20, width = 1000, height = 1000,orth = True)
 my_space.setCamera(camera)
-
-render = my_space.Render(max_iter = 2)
-
+render = my_space.Render()
 im = Matrix2Image(render)
-
 im.show()
-
-path_to_save = 'my_space_final_horse.png'
-
+path_to_save = 'my_space_final.png'
 im.save(path_to_save)
+"""
+
+orientation = np.array([0,0,np.pi/2])
+a = np.array([1.,0.,0.])
+print(Rotate(a,orientation))
 
 """
 my_circle = Circle(np.array([0,0,0]),2,np.array([1.,1.,1.]),np.array([1.,0.,0.]),np.array([1.,0.,0.]))

@@ -15,16 +15,27 @@ class Camera():
 	"""
 	Camera used in the Spacial domain
 	Parameters:
-	@ position 		: Camera's position
-	@ orientation 	: Camera's orientation
-	@ upvec			: Camera's up vector
+	@ position 				: Camera's position
+	@ rotation  			: Camera's rotation list, element is np.array
+	@ PosDepth 				: The pos depth of camera
+	@ PostDepth 			: The post depth of camera
+	@ resolution_height 	: The resolution height of camera
+	@ resolution_width 		: The resolution width of camera
+	@ height 				: The height of view
+	@ width 				: The width of view
+	@ orth 					: Whether to use orthogonal
 	"""
 
-	def __init__(self,position = arr([50.,0.,0.]), rotation = arr([[0.,0.,np.pi]]), PosDepth = 20, PostDepth = -1):
+	def __init__(self,position = arr([50.,0.,0.]), rotation = arr([[0.,0.,np.pi]]), PosDepth = 20, PostDepth = -1, resolution_height = 100, resolution_width = 100, height = 10, width = 10, orth = True):
 		self.position = position
 		self.rotation = rotation
 		self.pos = PosDepth
 		self.post = PostDepth
+		self.resolution_height = resolution_height
+		self.resolution_width = resolution_width
+		self.height = height
+		self.width = width
+		self.orth = orth
 
 	def setPosition(self,position):
 		self.position = position
@@ -37,6 +48,19 @@ class Camera():
 
 	def setPostDepth(self,PostDepth):
 		self.post = PostDepth
+
+	def setResolution_height(self, resolution_height):
+		self.resolution_height = resolution_height
+
+	def setResolution_width(self, resolution_width):
+		self.resolution_width = resolution_width
+	
+	def setheight(self, height):
+		self.height = height
+	
+	def setwidth(self, width):
+		self.width = width
+
 
 class Spacial():
 	"""
@@ -53,6 +77,10 @@ class Spacial():
 		self.lightlist = []
 
 	def setCamera(self, camera):
+		"""
+		Set the camera of scene
+		@ camera 	: The camera you want to set to
+		"""
 		self.camera = camera
 
 	def AddObject(self, obj):
@@ -85,43 +113,38 @@ class Spacial():
 		for lit in lits:
 			self.lightlist.append(lit)
 
-	def Render(self, orth=True, resolution_width = 200, resolution_height = 200, width = 10, height = 10, number = [1,1], max_iter = 5):
+	def Render(self, number = [1,1], max_iter = 5):
 		"""
 		Render the space and output a camera picture
-		@ orth 				: Whether to use orthognal or perspective
-		@ resolution_width	: resolution on width
-		@ resolution_height	: resolution on height
-		@ width 			: lenth of width
-		@ height 			: lenth of height
+		@ number 			: controls the tracing ray number, for now just set to [1,1] is okey
+		@ max_iter 			: the max iteration of rays
 		return value:
 		@ pic_matrix 		: picture matrix with shape [resolution_height,resolution_width,3] with float RGB coding
 		"""
 		print("Start Rendering")
-		pic_matrix = np.zeros([resolution_height,resolution_width,3])
-		print("Get the matrix size:\nresolution height\t%d\tresolution width%d\nwindows height\t%dwindows width\t%d" 
-			% (resolution_height,resolution_width,height,width))
-		for item in tqdm(range(resolution_height * resolution_width)):
-			i = int(item / resolution_height)
-			j = item - resolution_height * i
+		pic_matrix = np.zeros([self.camera.resolution_height,self.camera.resolution_width,3])
+		print("Get the matrix size:\nresolution height\t%d\tresolution width\t%d\nwindows height\t%d\twindows width\t%d" 
+			% (self.camera.resolution_height,self.camera.resolution_width,self.camera.height,self.camera.width))
+		orientation = arr([1,0,0])
+		for ori in self.camera.rotation:
+			orientation = Rotate(orientation, ori)
+		print("The camera orientation is " + str(orientation))
+		print("The camera position is  " + str(self.camera.position))
+		for item in tqdm(range(self.camera.resolution_height * self.camera.resolution_width)):
+			i = int(item / self.camera.resolution_height)
+			j = item - self.camera.resolution_height * i
 			x_idx = self.camera.pos
-			y_idx = (i - resolution_width/2) / resolution_width * width
-			z_idx = (-j + resolution_height/2) / resolution_height * height
+			y_idx = (-i + self.camera.resolution_width/2) / self.camera.resolution_width * self.camera.width
+			z_idx = (-j + self.camera.resolution_height/2) / self.camera.resolution_height * self.camera.height
 			orth_idx = arr([x_idx,y_idx,z_idx])
-			orientation = arr([1,0,0])
 			for ori in self.camera.rotation:
 				orth_idx = Rotate(orth_idx, ori)
-				orientation = Rotate(orientation, ori)
 			orth_idx += self.camera.position
-			if not orth:
+			if not self.camera.orth:
 				pic_matrix[j][i][:] = self.ray_tracing(self.camera.position,np.array(orth_idx-self.camera.position),0,max_iter,number)
 			else:
 				pic_matrix[j][i][:] = self.ray_tracing(orth_idx,orientation,0,max_iter,number)
 		return pic_matrix
-
-	def render_test(self,orth = True, y = 10, z = 10):
-		start = np.array([30,y,z])
-		vec = np.array([-1,0,0])
-		self.ray_tracing(start,vec,0,5,[1,1])
 
 	def ray_tracing(self,start,vec,iters,max_iter,number):
 		"""
@@ -274,7 +297,12 @@ class MyObject(object):
 	Parameters:
 	@ texture_s 		: np.array, size = 3, specular texture
 	@ texture_d 		: np.array, size = 3, diffusion texture
-	@ texture_a 		: np.array, size = 3, ambitious texture
+	@ texture_a 		: np.array, size = 3, ambient texture
+	@ ratio_s 			: np.array, size = 3, the ratio of specular light
+	@ ratio_d 			: np.array, size = 3, the ratio of diffusion light
+	@ ratio_a 			: np.array, size = 3, the ratio of ambient light
+	@ specular 			: bool, whether this object is specular or not (mostly used in mirror if specular = True)
+	@ decay 			: float, the decay number of ray
 	"""
 	def __init__(self,texture_s,texture_d,texture_a,ratio_s, ratio_d, ratio_a, specular, decay):
 		super(MyObject,self).__init__()
@@ -434,6 +462,12 @@ class Triangle(MyObject):
 		return False
 
 class CompleteTriangle(MyObject):
+	"""
+	The complete triangle
+	@ v1,v2,v3 				: the three vertices used to draw the triangle
+	@ norm1,norm2,norm3 	: the norm of the three vertices
+	@ texture_x				: need to give a shape 3*3 np.array type, for 3 vertices
+	"""
 	def __init__(self, v1, v2, v3, norm1, norm2, norm3, texture_s = arr([[0.,1.,0.]]*3), texture_d = arr([[0.,1.,0.]]*3), texture_a = arr([[0.,1.,0.]]*3), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 		if texture_s.shape != (3,3):
 			raise ValueError("texture_s size is wrong! The input texture is: "+str(texture_s))
@@ -481,14 +515,21 @@ class CompleteTriangle(MyObject):
 			return 0,arr([0.,0.,0.]),[],arr([0.,0.,0.]),False,[]
 
 	def get_norm_and_color(self, point):
+		"""
+		get the norm and color of given point, using interpolate
+		@ point 	: the point need to get info
+		return
+		@ norm 		: norm
+		@ texture 	: 3*3 color array
+		"""
 		veca = point - self.v1
 		vecb = self.v3 - self.v2
 		f,s = [0,1]
-		if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]):
+		if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]) or ( check_value_zero(vecb[f]) and check_value_zero(vecb[s]) ) or ( check_value_zero(veca[f]) and check_value_zero(veca[s]) ):
 			f,s = [0,2]
-			if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]):
+			if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]) or ( check_value_zero(vecb[f]) and check_value_zero(vecb[s]) ) or ( check_value_zero(veca[f]) and check_value_zero(veca[s]) ):
 				f,s = [1,2]
-				if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]):
+				if check_value_zero(vecb[f]*veca[s] - vecb[s]*veca[f]) or ( check_value_zero(vecb[f]) and check_value_zero(vecb[s]) ) or ( check_value_zero(veca[f]) and check_value_zero(veca[s]) ):
 					raise ValueError("Wrong point found with " +str(vecb)+str(veca) +str(point) + str(self.v1) + str(self.v2) + str(self.v3))
 		alpha = ((self.v2[s] - self.v1[s]) * vecb[f] + (self.v1[f] - self.v2[f]) * vecb[s]) / (vecb[f]*veca[s] - vecb[s]*veca[f])
 		if check_value_zero(alpha):
@@ -532,6 +573,11 @@ class CompleteTriangle(MyObject):
 
 
 class Plane(MyObject):
+	"""
+	Plane
+	@ point 	: one point in the plane
+	@ norm 		: the norm of this plane
+	"""
 	def __init__(self, point, norm, texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.,0.9]),texture_a = arr([0.5,0.,0.9]), ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
 		super(Plane,self).__init__(texture_s, texture_d, texture_a, ratio_s, ratio_d, ratio_a, specular, decay)
 		self.v = point
@@ -559,6 +605,7 @@ def Complete_Polynominal(v_list,norm_list,texture_s = arr([[1.,1.,1.]]*3),textur
 	"""
 	Used to quickly construct a polynominal
 	@ v_list 		: the vertices of polynominal
+	@ norm_list 	: the list of vertices' norm
 	@ texture 		: the texture of this object
 	ATTENTION!
 	This is just for convex polynominal
@@ -591,6 +638,14 @@ def Polynominal(v_list,texture_s = arr([1.,1.,1.]),texture_d = arr([0.4,0.3,0.9]
 	return objectlist
 
 def Cube(position, lenths, width, height, rotation = arr([0.,0.,0.]), texture_s = arr([1.,1.,1.]), texture_d = arr([0.5,0.5,1.]), texture_a = arr([0.5,0.5,1.]),ratio_s = 0.5, ratio_d = 0.4, ratio_a = 0.1, specular = False, decay = 0.3):
+	"""
+	Used to construct a cube
+	@ position 		: the cube central position
+	@ lenths 		: lenth of cube
+	@ witdh 		: width of cube
+	@ height 		: the hight of cube
+	@ rotation 		: the rotation of cube
+	"""
 	mid_lenth = lenths/2
 	mid_width = width/2
 	mid_height = height/2
@@ -608,15 +663,28 @@ def Cube(position, lenths, width, height, rotation = arr([0.,0.,0.]), texture_s 
 	return objlist
 
 def Rotate(vertex, rotation):
+	"""
+	Used to rotate vertex according to rotation
+	First rotate by x
+	the rotate by y
+	last rotate by z
+	"""
 	vec_x = arr([0,np.sin(rotation[0]),np.cos(rotation[0])])
 	vec_y = arr([np.sin(rotation[1]),0,np.cos(rotation[1])])
-	vec_z = arr([np.cos(rotation[2]),np.sin(rotation[2]),0])
+	vec_z = arr([np.cos(rotation[2]),-np.sin(rotation[2]),0])
 	vertex = arr([[1.,0.,0.],[0.,vec_x[2],vec_x[1]],[0.,-vec_x[1],vec_x[2]]]).dot(vertex.T)
-	vertex = arr([[vec_y[2],0.,vec_y[1]],[0.,1.,0.],[-vec_y[0],0.,vec_y[2]]]).dot(vertex)
+	vertex = arr([[vec_y[2],0.,vec_y[0]],[0.,1.,0.],[-vec_y[0],0.,vec_y[2]]]).dot(vertex)
 	vertex = arr([[vec_z[0],vec_z[1],0.],[-vec_z[1],vec_z[0],0.],[0.,0.,1.]]).dot(vertex)
 	return vertex.T
 
 def get_specular_ray_list(norm, vec, number, decay):
+	"""
+	Used to get ray list when the object is spacular
+	@ norm 		: the norm of the point
+	@ vec 		: the vec of input ray
+	@ number 	: control the return ray list lenth
+	@ decay		: the decay number
+	"""
 	ray_list = []
 	norm = - np.inner(norm, vec) * norm
 	ray_list.append([vec+2*norm, decay])
