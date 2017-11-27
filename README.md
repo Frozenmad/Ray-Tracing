@@ -1,5 +1,7 @@
-# Ray-Tracing 光线追踪算法实现 [README_english.md](English version)
+# Ray-Tracing 光线追踪算法实现
 _2017 fall SJTU CG course assignment2_
+
+For english version : [English version](README_english.md)
 ## 版权信息
 作者：关超宇
 
