@@ -123,4 +123,4 @@ Because I use python to implement ray-tracing, the computation speed is low. Thi
 
 Tests shows that, given one sphere, two simple triangles and one light, the resolution is 200\*200, the cost is about 30s.
 
-**AGAIN : Please give credit to the original author when you use it elsewhere~ **
+** AGAIN : Please give credit to the original author when you use it elsewhere~ **
