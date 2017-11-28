@@ -28,7 +28,7 @@ You can get these libs by simply entering the code bellow to you command line:
 ```
 pip install --upgrade Pillow numpy tqdm
 ```
-## Simplied Usage
+## Simplified Usage
 ### Step 0 Prepare the environment
 Import the libraries which we need to use.
 ```
